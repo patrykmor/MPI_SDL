@@ -63,7 +63,7 @@ int Rectangle_get_position_code(Rectangle* self, Window* window){
     {
         code+=3;
     }
-    //kolumne
+    //spalte
     if(!(window->leftBorder)&&((self->x<window->borderWidth))){
         code-=1;
     }
