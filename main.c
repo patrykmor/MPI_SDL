@@ -15,6 +15,7 @@
 #define RECTANGLE_HEIGHT 30
 #define BORDER_WIDTH 40
 
+
 typedef struct {
     int x;
     int y;
@@ -39,9 +40,14 @@ Neighbours* neighbours;
 
 MPI_Datatype mpi_rectangle;
 
+bool board[WINDOW_WIDTH+2*BORDER_WIDTH+2][WINDOW_HEIGHT+2*BORDER_WIDTH+2];
+
 void processLocalRectangles();
 void drawRectangle(Rectangle* rect);
 void processNeighbourRectangles();
+void resetBoard();
+void processColiding();
+
 int main(int argc, char *argv[])
 {
 
@@ -103,6 +109,24 @@ int main(int argc, char *argv[])
     SDL_Event event;
     bool running=true;
     while(running){
+        printf("rank %d: ", rank);
+            if(this->topBorder){
+                printf("top");
+            }
+    
+            if(this->bottomBorder){
+                printf("bot");
+            }
+       
+            if(this->rightBorder){
+                printf("right");
+            }
+        
+            if(this->leftBorder){
+                printf("left");
+            }
+            printf("\n");
+        
         while (SDL_PollEvent(&event))
         {
             if (event.type == SDL_QUIT)
@@ -126,6 +150,7 @@ int main(int argc, char *argv[])
             MPI_Abort(MPI_COMM_WORLD, 0);
             break;
         }
+        //resetBoard();
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
@@ -135,13 +160,81 @@ int main(int argc, char *argv[])
         //MPI_Barrier(MPI_COMM_WORLD);
         //printf("Processing neighbour rectangles...\n");
         processNeighbourRectangles();
+        //processColiding();
         //printf("Barrier 2 \n");
         //MPI_Barrier(MPI_COMM_WORLD);
         SDL_RenderPresent(renderer);
+        
     }
     MPI_Finalize();
 }
 
+void processColiding(){
+    RectangleListNode* current =head;
+    while (current!=NULL)
+    {
+        Rectangle* rect = &current->info;
+        int x = rect->x+2*rect->speedX;
+        int y = rect->y+2*rect->speedY;
+        if(rect->speedX<0){
+            bool collision=false;
+            for(int i=y; i<y+RECTANGLE_HEIGHT; i++){
+                if(board[x+BORDER_WIDTH+1][i+BORDER_WIDTH+1]){
+                    collision=true;
+                    break;
+                }
+            }
+            if(collision){
+                printf("Colision...\n");
+                rect->speedX=-rect->speedX;
+            }
+        }else{
+            bool collision=false;
+            for(int i=y; i<y+RECTANGLE_HEIGHT; i++){
+                if(board[x+RECTANGLE_WIDTH+BORDER_WIDTH+1][i+BORDER_WIDTH+1]){
+                    collision=true;
+                    break;
+                }
+            }
+            if(collision){
+                printf("Colision...\n");
+                rect->speedX=-rect->speedX;
+            }
+        }
+        if(rect->speedY<0){
+            bool collision=false;
+            for(int i=x; i<x+RECTANGLE_WIDTH; i++){
+                if(board[i+BORDER_WIDTH+1][y+BORDER_WIDTH+1]){
+                    collision=true;
+                    break;
+                }
+            }
+            if(collision){
+                printf("Colision...\n");
+                rect->speedY=-rect->speedY;
+            }
+        }else{
+            bool collision=false;
+            for(int i=x; i<x+RECTANGLE_WIDTH; i++){
+                if(board[i+BORDER_WIDTH+1][y+RECTANGLE_HEIGHT+BORDER_WIDTH+1]){
+                    collision=true;
+                    break;
+                }
+            }
+            if(collision){
+                printf("Colision...\n");
+                rect->speedY=-rect->speedY;
+            }
+        }
+        current=current->next;
+    }
+    
+}
+void resetBoard(){
+    for(int i=0; i<WINDOW_WIDTH+2*BORDER_WIDTH+2; i++){
+        memset(board[i], 0, sizeof board[i]);
+    }
+}
 void receiveInfo(int rank, Offset offsets);
 void processNeighbourRectangles(){
     if(!(this->topBorder)){
@@ -284,6 +377,17 @@ void drawRectangle(Rectangle* rect){
     srect.w=rect->width;
     srect.h=rect->height;
     SDL_RenderFillRect(renderer, &srect);
+    for(int x = srect.x; x<srect.w+srect.x; x++){
+        if(x>=WINDOW_WIDTH+2*BORDER_WIDTH+2){
+            break;
+        }
+        for(int y=srect.y; y<srect.h+srect.y; y++){
+            if(y>=WINDOW_HEIGHT+2*BORDER_WIDTH+2){
+                break;
+            }
+            board[x+BORDER_WIDTH+1][y+BORDER_WIDTH+1]=true;
+        }
+    }
 }
 
 
