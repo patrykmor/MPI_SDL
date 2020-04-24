@@ -7,7 +7,7 @@
 #include<stdio.h>
 #include<stdbool.h>
 #include"Window.h"
-typedef struct
+typedef struct rectangle
 {
     int width;
     int height;
