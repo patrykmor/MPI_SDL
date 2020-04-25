@@ -57,22 +57,22 @@ int Rectangle_get_position_code(Rectangle* self, Window* window){
     int code=4;
     //zeile
     if((!(window->topBorder))&&(self->y<window->borderWidth)){
-        printf("Rank %d, code -3\n", window->rank);
+
         code-=3;
     }
     else if (!(window->bottomBorder)&&((self->y+self->height)>=window->windowHeight-window->borderWidth))
     {
-        printf("Rank %d, code +3\n", window->rank);
+
         code+=3;
     }
     //spalte
     if(!(window->leftBorder)&&((self->x<window->borderWidth))){
-        printf("Rank %d, code -1\n", window->rank);
+
         code-=1;
     }
     else if (!(window->rightBorder)&&((self->x+self->width)>=window->windowWidth-window->borderWidth))
     {
-        printf("Rank %d, code +1\n", window->rank);
+     
         code+=1;
     }
     return code;

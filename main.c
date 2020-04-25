@@ -46,7 +46,7 @@ void processLocalRectangles();
 void drawRectangle(Rectangle* rect);
 void processNeighbourRectangles();
 void resetBoard();
-void processColiding();
+void processColisions();
 
 int main(int argc, char *argv[])
 {
@@ -109,24 +109,6 @@ int main(int argc, char *argv[])
     SDL_Event event;
     bool running=true;
     while(running){
-        printf("rank %d: ", rank);
-            if(this->topBorder){
-                printf("top");
-            }
-    
-            if(this->bottomBorder){
-                printf("bot");
-            }
-       
-            if(this->rightBorder){
-                printf("right");
-            }
-        
-            if(this->leftBorder){
-                printf("left");
-            }
-            printf("\n");
-        
         while (SDL_PollEvent(&event))
         {
             if (event.type == SDL_QUIT)
@@ -150,7 +132,7 @@ int main(int argc, char *argv[])
             MPI_Abort(MPI_COMM_WORLD, 0);
             break;
         }
-        //resetBoard();
+        resetBoard();
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
@@ -160,7 +142,7 @@ int main(int argc, char *argv[])
         //MPI_Barrier(MPI_COMM_WORLD);
         //printf("Processing neighbour rectangles...\n");
         processNeighbourRectangles();
-        //processColiding();
+        processColisions();
         //printf("Barrier 2 \n");
         //MPI_Barrier(MPI_COMM_WORLD);
         SDL_RenderPresent(renderer);
@@ -169,13 +151,13 @@ int main(int argc, char *argv[])
     MPI_Finalize();
 }
 
-void processColiding(){
+void processColisions(){
     RectangleListNode* current =head;
     while (current!=NULL)
     {
         Rectangle* rect = &current->info;
-        int x = rect->x+2*rect->speedX;
-        int y = rect->y+2*rect->speedY;
+        int x = rect->x+rect->speedX;
+        int y = rect->y;
         if(rect->speedX<0){
             bool collision=false;
             for(int i=y; i<y+RECTANGLE_HEIGHT; i++){
@@ -200,7 +182,9 @@ void processColiding(){
                 printf("Colision...\n");
                 rect->speedX=-rect->speedX;
             }
-        }
+        } 
+        x = rect->x;
+        y = rect->y+rect->speedY;
         if(rect->speedY<0){
             bool collision=false;
             for(int i=x; i<x+RECTANGLE_WIDTH; i++){
@@ -378,12 +362,18 @@ void drawRectangle(Rectangle* rect){
     srect.h=rect->height;
     SDL_RenderFillRect(renderer, &srect);
     for(int x = srect.x; x<srect.w+srect.x; x++){
-        if(x>=WINDOW_WIDTH+2*BORDER_WIDTH+2){
+        if(x<-BORDER_WIDTH-1){
+            continue;
+        }
+        if(x>=(WINDOW_WIDTH+BORDER_WIDTH+1)){
             break;
         }
         for(int y=srect.y; y<srect.h+srect.y; y++){
-            if(y>=WINDOW_HEIGHT+2*BORDER_WIDTH+2){
+            if(y>=(WINDOW_HEIGHT+BORDER_WIDTH+1)){
                 break;
+            }
+            if(y<-BORDER_WIDTH-1){
+                    continue;
             }
             board[x+BORDER_WIDTH+1][y+BORDER_WIDTH+1]=true;
         }
